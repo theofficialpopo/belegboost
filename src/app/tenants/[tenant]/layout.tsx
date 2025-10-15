@@ -16,13 +16,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export default function TenantLayout({
+export default async function TenantLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: { tenant: string };
+  params: Promise<{ tenant: string }>;
 }) {
+  const { tenant } = await params;
+
   return (
     <html lang="de">
       <body
@@ -32,7 +34,7 @@ export default function TenantLayout({
           <header className="border-b">
             <div className="container mx-auto px-4 py-4">
               <h1 className="text-xl font-bold">
-                {params.tenant} - BelegBoost
+                {tenant} - BelegBoost
               </h1>
             </div>
           </header>

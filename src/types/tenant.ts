@@ -11,15 +11,15 @@ export interface TenantBranding {
 }
 
 export interface Tenant {
-  id: string;
-  teamId: string; // Appwrite Team ID
+  $id: string;
+  team_id: string; // Appwrite Team ID
   subdomain: string;
   name: string;
-  ownerEmail: string;
+  owner_email: string;
   branding?: TenantBranding;
   status: TenantStatus;
-  createdAt: string;
-  updatedAt: string;
+  $createdAt: string;
+  $updatedAt: string;
 }
 
 export interface CreateTenantInput {

@@ -28,6 +28,10 @@ import { type TenantContext } from '@/types/user';
  * ```
  */
 export async function getTenantContext(): Promise<TenantContext> {
+  const { getCurrentUser } = await import('@/lib/server/session');
+  const { getTenantBySubdomain } = await import('@/lib/dal/tenants');
+  const { getUserByAppwriteId } = await import('@/lib/dal/users');
+
   // Get hostname from headers
   const headersList = await headers();
   const hostname = headersList.get('host') || '';
@@ -51,19 +55,34 @@ export async function getTenantContext(): Promise<TenantContext> {
     throw new Error('No tenant subdomain found in request');
   }
 
-  // TODO: Implement actual authentication check with Appwrite
-  // For now, this is a placeholder that will be implemented in Phase 2
-  // In Phase 2, we will:
-  // 1. Check for valid session cookie
-  // 2. Fetch user from Appwrite
-  // 3. Verify user belongs to the tenant team
-  // 4. Return actual tenant context
+  // Get current authenticated user
+  const appwriteUser = await getCurrentUser();
+  if (!appwriteUser) {
+    throw new Error('User not authenticated');
+  }
 
-  // Placeholder return - will be replaced in Phase 2
+  // Get tenant by subdomain
+  const tenant = await getTenantBySubdomain(subdomain);
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  // Get user from database
+  const user = await getUserByAppwriteId(appwriteUser.$id);
+  if (!user) {
+    throw new Error('User record not found');
+  }
+
+  // Verify user belongs to this tenant
+  if (user.tenant_id !== tenant.$id) {
+    throw new Error('User does not belong to this tenant');
+  }
+
   return {
-    tenantId: 'placeholder-tenant-id',
-    userId: 'placeholder-user-id',
-    role: 'owner',
+    tenantId: tenant.$id,
+    userId: user.$id,
+    organizationId: user.organization_id,
+    role: user.role,
     subdomain,
   };
 }
