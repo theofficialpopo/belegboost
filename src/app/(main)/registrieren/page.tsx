@@ -9,6 +9,12 @@
 import { useState } from 'react';
 import { registerTaxAdvisor, checkSubdomainAvailability } from '@/actions/auth';
 import type { RegistrationFormData } from '@/lib/validations/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { CheckCircle2, XCircle } from 'lucide-react';
 
 export default function RegistrationPage() {
   const [formData, setFormData] = useState<RegistrationFormData>({
@@ -24,6 +30,7 @@ export default function RegistrationPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
+  const [isCheckingSubdomain, setIsCheckingSubdomain] = useState(false);
 
   const handleSubdomainCheck = async (subdomain: string) => {
     if (subdomain.length < 3) {
@@ -31,9 +38,14 @@ export default function RegistrationPage() {
       return;
     }
 
-    const result = await checkSubdomainAvailability(subdomain);
-    if (result.success && result.data) {
-      setSubdomainAvailable(result.data.available);
+    setIsCheckingSubdomain(true);
+    try {
+      const result = await checkSubdomainAvailability(subdomain);
+      if (result.success && result.data) {
+        setSubdomainAvailable(result.data.available);
+      }
+    } finally {
+      setIsCheckingSubdomain(false);
     }
   };
 
@@ -56,150 +68,187 @@ export default function RegistrationPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Steuerberater-Konto erstellen
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Registrieren Sie Ihre Steuerkanzlei für BelegBoost
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {errors.form && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800">{errors.form}</p>
-            </div>
-          )}
-
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="firmName" className="sr-only">Firmenname</label>
-              <input
-                id="firmName"
-                name="firmName"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Firmenname"
-                value={formData.firmName}
-                onChange={(e) => setFormData({ ...formData, firmName: e.target.value })}
-              />
-            </div>
-            <div>
-              <label htmlFor="subdomain" className="sr-only">Subdomain</label>
-              <input
-                id="subdomain"
-                name="subdomain"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="subdomain (z.B. meine-kanzlei)"
-                value={formData.subdomain}
-                onChange={(e) => {
-                  setFormData({ ...formData, subdomain: e.target.value.toLowerCase() });
-                  handleSubdomainCheck(e.target.value.toLowerCase());
-                }}
-              />
-              {subdomainAvailable !== null && (
-                <p className={`text-xs mt-1 ${subdomainAvailable ? 'text-green-600' : 'text-red-600'}`}>
-                  {subdomainAvailable ? '✓ Verfügbar' : '✗ Bereits vergeben'}
-                </p>
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md">
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">
+              Steuerberater-Konto erstellen
+            </CardTitle>
+            <CardDescription className="text-center">
+              Registrieren Sie Ihre Steuerkanzlei für BelegBoost
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {errors.form && (
+                <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
+                  <p className="text-sm text-destructive">{errors.form}</p>
+                </div>
               )}
-            </div>
-            <div>
-              <label htmlFor="firstName" className="sr-only">Vorname</label>
-              <input
-                id="firstName"
-                name="firstName"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Vorname"
-                value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-              />
-            </div>
-            <div>
-              <label htmlFor="lastName" className="sr-only">Nachname</label>
-              <input
-                id="lastName"
-                name="lastName"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Nachname"
-                value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="sr-only">E-Mail</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="E-Mail-Adresse"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">Passwort</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Passwort"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmPassword" className="sr-only">Passwort bestätigen</label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Passwort bestätigen"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              />
-            </div>
-          </div>
 
-          <div className="flex items-center">
-            <input
-              id="acceptTerms"
-              name="acceptTerms"
-              type="checkbox"
-              required
-              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              checked={formData.acceptTerms}
-              onChange={(e) => setFormData({ ...formData, acceptTerms: e.target.checked })}
-            />
-            <label htmlFor="acceptTerms" className="ml-2 block text-sm text-gray-900">
-              Ich akzeptiere die <a href="/datenschutz" className="text-indigo-600 hover:text-indigo-500">Nutzungsbedingungen</a>
-            </label>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="firmName">Firmenname</Label>
+                <Input
+                  id="firmName"
+                  name="firmName"
+                  type="text"
+                  required
+                  placeholder="Meine Steuerkanzlei GmbH"
+                  value={formData.firmName}
+                  onChange={(e) => setFormData({ ...formData, firmName: e.target.value })}
+                />
+              </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {isLoading ? 'Registrierung läuft...' : 'Registrieren'}
-            </button>
-          </div>
-        </form>
+              <div className="space-y-2">
+                <Label htmlFor="subdomain">Subdomain</Label>
+                <div className="relative">
+                  <Input
+                    id="subdomain"
+                    name="subdomain"
+                    type="text"
+                    required
+                    placeholder="meine-kanzlei"
+                    value={formData.subdomain}
+                    onChange={(e) => {
+                      const value = e.target.value.toLowerCase();
+                      setFormData({ ...formData, subdomain: value });
+                      handleSubdomainCheck(value);
+                    }}
+                    className="pr-10"
+                  />
+                  {isCheckingSubdomain && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                    </div>
+                  )}
+                  {!isCheckingSubdomain && subdomainAvailable !== null && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {subdomainAvailable ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-destructive" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Ihre URL: {formData.subdomain || 'subdomain'}.belegboost.de
+                </p>
+                {!isCheckingSubdomain && subdomainAvailable !== null && (
+                  <p className={`text-xs ${subdomainAvailable ? 'text-green-600' : 'text-destructive'}`}>
+                    {subdomainAvailable ? '✓ Subdomain verfügbar' : '✗ Subdomain bereits vergeben'}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">Vorname</Label>
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    required
+                    placeholder="Max"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Nachname</Label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    required
+                    placeholder="Mustermann"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">E-Mail-Adresse</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="max@meine-kanzlei.de"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Passwort</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Mind. 8 Zeichen, inkl. Groß-/Kleinbuchstaben, Zahl und Sonderzeichen
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                />
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="acceptTerms"
+                  checked={formData.acceptTerms}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, acceptTerms: checked === true })
+                  }
+                  required
+                />
+                <Label
+                  htmlFor="acceptTerms"
+                  className="text-sm font-normal leading-tight cursor-pointer"
+                >
+                  Ich akzeptiere die{' '}
+                  <a href="/datenschutz" className="text-primary hover:underline">
+                    Nutzungsbedingungen
+                  </a>
+                </Label>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isLoading || (subdomainAvailable === false)}
+                className="w-full"
+              >
+                {isLoading ? 'Registrierung läuft...' : 'Konto erstellen'}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
+              Bereits ein Konto?{' '}
+              <a href="/" className="text-primary hover:underline">
+                Zur Anmeldung
+              </a>
+            </p>
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );
