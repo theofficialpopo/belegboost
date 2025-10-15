@@ -2,15 +2,17 @@
  * Tenant homepage - will become the dashboard in Phase 2
  */
 
-export default function TenantHomePage({
+export default async function TenantHomePage({
   params,
 }: {
-  params: { tenant: string };
+  params: Promise<{ tenant: string }>;
 }) {
+  const { tenant } = await params;
+
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold">
-        Willkommen bei {params.tenant}
+        Willkommen bei {tenant}
       </h2>
       <p className="text-muted-foreground">
         Dies ist die Startseite für den Steuerberater-Bereich.
