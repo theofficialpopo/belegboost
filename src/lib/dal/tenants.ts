@@ -10,7 +10,8 @@
 import { databases } from '@/lib/server/appwrite';
 import { DATABASE_ID, COLLECTIONS } from '@/lib/constants/auth';
 import { Query } from 'node-appwrite';
-import type { Tenant } from '@/types/tenant';
+import type { Tenants } from '@/types/appwrite';
+import { TenantStatus } from '@/types/appwrite';
 
 /**
  * Check if a subdomain is available for registration
@@ -40,11 +41,11 @@ export async function isSubdomainAvailable(subdomain: string): Promise<boolean> 
  * Get tenant by subdomain
  *
  * @param subdomain - The subdomain to look up
- * @returns Promise<Tenant | null> - The tenant or null if not found
+ * @returns Promise<Tenants | null> - The tenant or null if not found
  */
-export async function getTenantBySubdomain(subdomain: string): Promise<Tenant | null> {
+export async function getTenantBySubdomain(subdomain: string): Promise<Tenants | null> {
   try {
-    const result = await databases.listDocuments<Tenant>(
+    const result = await databases.listDocuments<Tenants>(
       DATABASE_ID,
       COLLECTIONS.TENANTS,
       [
@@ -68,11 +69,11 @@ export async function getTenantBySubdomain(subdomain: string): Promise<Tenant | 
  * Get tenant by ID
  *
  * @param tenantId - The tenant ID
- * @returns Promise<Tenant | null> - The tenant or null if not found
+ * @returns Promise<Tenants | null> - The tenant or null if not found
  */
-export async function getTenantById(tenantId: string): Promise<Tenant | null> {
+export async function getTenantById(tenantId: string): Promise<Tenants | null> {
   try {
-    const tenant = await databases.getDocument<Tenant>(
+    const tenant = await databases.getDocument<Tenants>(
       DATABASE_ID,
       COLLECTIONS.TENANTS,
       tenantId
@@ -89,11 +90,11 @@ export async function getTenantById(tenantId: string): Promise<Tenant | null> {
  * Get tenant by team ID
  *
  * @param teamId - The Appwrite team ID
- * @returns Promise<Tenant | null> - The tenant or null if not found
+ * @returns Promise<Tenants | null> - The tenant or null if not found
  */
-export async function getTenantByTeamId(teamId: string): Promise<Tenant | null> {
+export async function getTenantByTeamId(teamId: string): Promise<Tenants | null> {
   try {
-    const result = await databases.listDocuments<Tenant>(
+    const result = await databases.listDocuments<Tenants>(
       DATABASE_ID,
       COLLECTIONS.TENANTS,
       [
@@ -117,16 +118,16 @@ export async function getTenantByTeamId(teamId: string): Promise<Tenant | null> 
  * Create a new tenant
  *
  * @param data - Tenant creation data
- * @returns Promise<Tenant> - The created tenant
+ * @returns Promise<Tenants> - The created tenant
  */
 export async function createTenant(data: {
   teamId: string;
   subdomain: string;
   name: string;
   ownerEmail: string;
-}): Promise<Tenant> {
+}): Promise<Tenants> {
   try {
-    const tenant = await databases.createDocument<Tenant>(
+    const tenant = await databases.createDocument<Tenants>(
       DATABASE_ID,
       COLLECTIONS.TENANTS,
       'unique()',
@@ -135,8 +136,10 @@ export async function createTenant(data: {
         subdomain: data.subdomain,
         name: data.name,
         owner_email: data.ownerEmail,
-        branding: {},
-        status: 'trial',
+        branding_logo_url: null,
+        branding_primary_color: null,
+        branding_secondary_color: null,
+        status: TenantStatus.ACTIVE,
       }
     );
 
@@ -152,24 +155,22 @@ export async function createTenant(data: {
  *
  * @param tenantId - The tenant ID
  * @param branding - Branding data to update
- * @returns Promise<Tenant> - The updated tenant
+ * @returns Promise<Tenants> - The updated tenant
  */
 export async function updateTenantBranding(
   tenantId: string,
   branding: {
-    logoUrl?: string;
-    primaryColor?: string;
-    secondaryColor?: string;
+    branding_logo_url?: string | null;
+    branding_primary_color?: string | null;
+    branding_secondary_color?: string | null;
   }
-): Promise<Tenant> {
+): Promise<Tenants> {
   try {
-    const tenant = await databases.updateDocument<Tenant>(
+    const tenant = await databases.updateDocument<Tenants>(
       DATABASE_ID,
       COLLECTIONS.TENANTS,
       tenantId,
-      {
-        branding,
-      }
+      branding
     );
 
     return tenant;

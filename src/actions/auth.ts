@@ -157,8 +157,9 @@ export async function registerTaxAdvisor(
     try {
       organization = await createOrganization({
         tenantId: tenant.$id,
-        type: 'advisor_firm',
+        type: 'advisor',
         name: validatedData.firmName,
+        contactEmail: validatedData.email,
       });
     } catch (error) {
       console.error('Error creating organization:', error);

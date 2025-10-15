@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "types:pull": "appwrite pull collections",
+    "types:generate": "appwrite types ./src/types/appwrite.ts --strict",
+    "types:sync": "npm run types:pull && npm run types:generate",
+    "types:check": "tsc --noEmit"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",

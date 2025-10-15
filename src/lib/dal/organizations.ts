@@ -10,44 +10,37 @@
 import { databases } from '@/lib/server/appwrite';
 import { DATABASE_ID, COLLECTIONS } from '@/lib/constants/auth';
 import { Query } from 'node-appwrite';
-
-/**
- * Organization type enum
- */
-export type OrganizationType = 'advisor_firm' | 'client_company';
-
-/**
- * Organization interface
- */
-export interface Organization {
-  $id: string;
-  tenant_id: string;
-  type: OrganizationType;
-  name: string;
-  $createdAt: string;
-  $updatedAt: string;
-}
+import type { Organizations } from '@/types/appwrite';
+import { OrganizationType, OrganizationStatus } from '@/types/appwrite';
 
 /**
  * Create a new organization
  *
  * @param data - Organization creation data
- * @returns Promise<Organization> - The created organization
+ * @returns Promise<Organizations> - The created organization
  */
 export async function createOrganization(data: {
   tenantId: string;
-  type: OrganizationType;
+  type: 'advisor' | 'client';
   name: string;
-}): Promise<Organization> {
+  contactEmail?: string;
+}): Promise<Organizations> {
   try {
-    const organization = await databases.createDocument<Organization>(
+    // Map string type to enum
+    const typeEnum = data.type === 'advisor' ? OrganizationType.ADVISOR : OrganizationType.CLIENT;
+
+    const organization = await databases.createDocument<Organizations>(
       DATABASE_ID,
       COLLECTIONS.ORGANIZATIONS,
       'unique()',
       {
         tenant_id: data.tenantId,
-        type: data.type,
+        type: typeEnum,
         name: data.name,
+        tax_id: null,
+        contact_email: data.contactEmail || '',
+        contact_phone: null,
+        status: OrganizationStatus.ACTIVE,
       }
     );
 
@@ -62,11 +55,11 @@ export async function createOrganization(data: {
  * Get organization by ID
  *
  * @param organizationId - The organization ID
- * @returns Promise<Organization | null> - The organization or null if not found
+ * @returns Promise<Organizations | null> - The organization or null if not found
  */
-export async function getOrganizationById(organizationId: string): Promise<Organization | null> {
+export async function getOrganizationById(organizationId: string): Promise<Organizations | null> {
   try {
-    const organization = await databases.getDocument<Organization>(
+    const organization = await databases.getDocument<Organizations>(
       DATABASE_ID,
       COLLECTIONS.ORGANIZATIONS,
       organizationId
@@ -84,12 +77,12 @@ export async function getOrganizationById(organizationId: string): Promise<Organ
  *
  * @param tenantId - The tenant ID
  * @param type - Optional filter by organization type
- * @returns Promise<Organization[]> - Array of organizations
+ * @returns Promise<Organizations[]> - Array of organizations
  */
 export async function listOrganizations(
   tenantId: string,
-  type?: OrganizationType
-): Promise<Organization[]> {
+  type?: 'advisor' | 'client'
+): Promise<Organizations[]> {
   try {
     const queries = [
       Query.equal('tenant_id', tenantId),
@@ -97,10 +90,11 @@ export async function listOrganizations(
     ];
 
     if (type) {
-      queries.push(Query.equal('type', type));
+      const typeEnum = type === 'advisor' ? OrganizationType.ADVISOR : OrganizationType.CLIENT;
+      queries.push(Query.equal('type', typeEnum));
     }
 
-    const result = await databases.listDocuments<Organization>(
+    const result = await databases.listDocuments<Organizations>(
       DATABASE_ID,
       COLLECTIONS.ORGANIZATIONS,
       queries
@@ -117,16 +111,16 @@ export async function listOrganizations(
  * Get the advisor firm organization for a tenant
  *
  * @param tenantId - The tenant ID
- * @returns Promise<Organization | null> - The advisor firm organization or null
+ * @returns Promise<Organizations | null> - The advisor firm organization or null
  */
-export async function getAdvisorFirmOrganization(tenantId: string): Promise<Organization | null> {
+export async function getAdvisorFirmOrganization(tenantId: string): Promise<Organizations | null> {
   try {
-    const result = await databases.listDocuments<Organization>(
+    const result = await databases.listDocuments<Organizations>(
       DATABASE_ID,
       COLLECTIONS.ORGANIZATIONS,
       [
         Query.equal('tenant_id', tenantId),
-        Query.equal('type', 'advisor_firm'),
+        Query.equal('type', OrganizationType.ADVISOR),
         Query.limit(1),
       ]
     );
